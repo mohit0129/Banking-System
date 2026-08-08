@@ -1,0 +1,546 @@
+<div class="manager-page">
+  <!-- Floating Toast Notification -->
+  <div class="toast-container" *ngIf="feedbackMessage">
+    <div class="toast-card" [ngClass]="isSuccess ? 'toast-success' : 'toast-error'">
+      <div class="toast-body">
+        <svg *ngIf="isSuccess" class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <svg *ngIf="!isSuccess" class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" x2="12" y1="8" y2="12"/>
+          <line x1="12" x2="12.01" y1="16" y2="16"/>
+        </svg>
+        <span>{{ feedbackMessage }}</span>
+      </div>
+      <button (click)="closeFeedback()" class="toast-close" title="Dismiss">
+        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <line x1="18" x2="6" y1="6" y2="18"/>
+          <line x1="6" x2="18" y1="6" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="manager-container">
+    <!-- Header Banner -->
+    <header class="executive-banner">
+      <div class="banner-left">
+        <div class="role-pill-row">
+          <span class="role-badge">Branch Operations</span>
+          <span class="branch-pill">Mumbai Central (HQ)</span>
+        </div>
+        <h2>Manager Operations Portal</h2>
+        <p class="manager-meta">Logged in as <strong>{{ authService.currentUser()?.fullName }}</strong> • Central System Administrator</p>
+      </div>
+      <div class="banner-right">
+        <button (click)="openCreateModal()" class="btn-create-acc">
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <line x1="12" x2="12" y1="5" y2="19"/>
+            <line x1="5" x2="19" y1="12" y2="12"/>
+          </svg>
+          <span>Open Customer Account</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Financial Analytics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card vault-card">
+        <div class="stat-header">
+          <span class="stat-label">TOTAL BANK BALANCE</span>
+          <span class="stat-icon-badge">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value vault-val">₹{{ totalReserves | number:'1.2-2' }}</div>
+        <span class="stat-sub">Aggregated customer deposits</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">TOTAL DEPOSITS</span>
+          <span class="stat-icon-badge text-success">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <line x1="17" x2="7" y1="7" y2="17"/>
+              <polyline points="17 17 7 17 7 7"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value text-success">₹{{ totalBankInflow | number:'1.2-2' }}</div>
+        <span class="stat-sub">Lifetime deposits received</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">TOTAL WITHDRAWALS</span>
+          <span class="stat-icon-badge text-danger">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <line x1="7" x2="17" y1="17" y2="7"/>
+              <polyline points="7 7 17 7 17 17"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value text-danger">₹{{ totalBankOutflow | number:'1.2-2' }}</div>
+        <span class="stat-sub">Lifetime cash withdrawals</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">ACTIVE ACCOUNTS</span>
+          <span class="stat-icon-badge">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value">
+          {{ activeAccountsCount }}
+          <span class="stat-dim">/ {{ customers.length }}</span>
+        </div>
+        <span class="stat-sub">{{ activePercentage }}% active • {{ transactions.length }} total entries</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button
+        [class.active-tab]="activeTab === 'customers'"
+        (click)="activeTab = 'customers'"
+        class="tab-btn"
+      >
+        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span>Customers ({{ customers.length }})</span>
+      </button>
+      <button
+        [class.active-tab]="activeTab === 'transactions'"
+        (click)="activeTab = 'transactions'"
+        class="tab-btn"
+      >
+        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" x2="8" y1="13" y2="13"/>
+          <line x1="16" x2="8" y1="17" y2="17"/>
+        </svg>
+        <span>System Ledger ({{ transactions.length }})</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Customers Directory -->
+    <section *ngIf="activeTab === 'customers'" class="management-section">
+      <div class="section-title-bar">
+        <div>
+          <h3>Customer Accounts Directory</h3>
+          <p class="title-sub">{{ filteredCustomers.length }} registered customers found</p>
+        </div>
+        <button (click)="loadAllData()" [disabled]="isRefreshing" class="btn-refresh">
+          <svg class="svg-icon svg-icon-sm" [class.spin]="isRefreshing" viewBox="0 0 24 24">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+            <path d="M16 16h5v5"/>
+          </svg>
+          <span>{{ isRefreshing ? 'Refreshing...' : 'Refresh Data' }}</span>
+        </button>
+      </div>
+
+      <!-- Search and Status Filter -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <svg class="svg-icon search-icon" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="customerSearch"
+            placeholder="Search by name, email, account number, or phone..."
+            class="search-input"
+          />
+          <button *ngIf="customerSearch" (click)="clearCustomerSearch()" class="btn-clear-search" title="Clear search">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="filter-pills">
+          <button
+            (click)="customerStatusFilter = 'ALL'"
+            [class.active-pill]="customerStatusFilter === 'ALL'"
+            class="filter-pill"
+          >
+            All Accounts
+          </button>
+          <button
+            (click)="customerStatusFilter = 'ACTIVE'"
+            [class.active-pill]="customerStatusFilter === 'ACTIVE'"
+            class="filter-pill"
+          >
+            Active Only
+          </button>
+          <button
+            (click)="customerStatusFilter = 'DEACTIVATED'"
+            [class.active-pill]="customerStatusFilter === 'DEACTIVATED'"
+            class="filter-pill"
+          >
+            Deactivated Only
+          </button>
+        </div>
+      </div>
+
+      <!-- Customers Table -->
+      <div class="table-container" *ngIf="filteredCustomers.length > 0; else noCustomers">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Contact Details</th>
+              <th>Account Number</th>
+              <th class="text-right">Balance (₹)</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cust of filteredCustomers">
+              <td>
+                <div class="cust-profile-cell">
+                  <div class="cust-avatar">{{ getUserInitials(cust.fullName) }}</div>
+                  <div>
+                    <span class="cust-name">{{ cust.fullName }}</span>
+                    <span class="cust-since">Joined {{ cust.createdAt | date:'mediumDate' }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="cust-contact-cell">
+                  <span class="contact-email">{{ cust.email }}</span>
+                  <span class="contact-phone">{{ cust.phoneNumber || 'N/A' }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="account-pill">{{ cust.accountNumber || 'Pending' }}</span>
+              </td>
+              <td class="text-right balance-val">
+                ₹{{ (cust.balance ?? 0) | number:'1.2-2' }}
+              </td>
+              <td>
+                <span
+                  class="status-chip"
+                  [ngClass]="cust.isActive ? 'chip-active' : 'chip-deactivated'"
+                >
+                  <span class="chip-dot"></span>
+                  {{ cust.isActive ? 'Active' : 'Deactivated' }}
+                </span>
+              </td>
+              <td class="text-right">
+                <button
+                  *ngIf="cust.isActive"
+                  (click)="toggleStatus(cust, false)"
+                  class="btn-status btn-deactivate"
+                  title="Pause account operations"
+                >
+                  Deactivate
+                </button>
+                <button
+                  *ngIf="!cust.isActive"
+                  (click)="toggleStatus(cust, true)"
+                  class="btn-status btn-activate"
+                  title="Resume account operations"
+                >
+                  Activate
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noCustomers>
+        <div class="empty-state">
+          <svg class="svg-icon svg-icon-xl empty-icon" viewBox="0 0 24 24">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <h4>No Customers Match Criteria</h4>
+          <p>Try clearing your search query or switching your status filter.</p>
+        </div>
+      </ng-template>
+    </section>
+
+    <!-- TAB 2: System Audit Ledger -->
+    <section *ngIf="activeTab === 'transactions'" class="management-section">
+      <div class="section-title-bar">
+        <div>
+          <h3>System Transaction Ledger</h3>
+          <p class="title-sub">{{ filteredTransactions.length }} bank-wide audit records</p>
+        </div>
+        <div class="title-actions">
+          <button (click)="loadAllData()" [disabled]="isRefreshing" class="btn-refresh">
+            <svg class="svg-icon svg-icon-sm" [class.spin]="isRefreshing" viewBox="0 0 24 24">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+              <path d="M16 16h5v5"/>
+            </svg>
+            <span>Refresh</span>
+          </button>
+          <button (click)="exportAuditLedger()" class="btn-export">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" x2="12" y1="15" y2="3"/>
+            </svg>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters & Search Bar -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <svg class="svg-icon search-icon" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="transactionSearch"
+            placeholder="Search by account number, description, counterparty..."
+            class="search-input"
+          />
+          <button *ngIf="transactionSearch" (click)="clearTransactionSearch()" class="btn-clear-search" title="Clear search">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="filter-pills">
+          <button
+            (click)="transactionTypeFilter = 'ALL'"
+            [class.active-pill]="transactionTypeFilter === 'ALL'"
+            class="filter-pill"
+          >
+            All
+          </button>
+          <button
+            (click)="transactionTypeFilter = 'Deposit'"
+            [class.active-pill]="transactionTypeFilter === 'Deposit'"
+            class="filter-pill"
+          >
+            Deposits
+          </button>
+          <button
+            (click)="transactionTypeFilter = 'Withdrawal'"
+            [class.active-pill]="transactionTypeFilter === 'Withdrawal'"
+            class="filter-pill"
+          >
+            Withdrawals
+          </button>
+          <button
+            (click)="transactionTypeFilter = 'Transfer In'"
+            [class.active-pill]="transactionTypeFilter === 'Transfer In'"
+            class="filter-pill"
+          >
+            Transfer In
+          </button>
+          <button
+            (click)="transactionTypeFilter = 'Transfer Out'"
+            [class.active-pill]="transactionTypeFilter === 'Transfer Out'"
+            class="filter-pill"
+          >
+            Transfer Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Transactions Ledger Table -->
+      <div class="table-container" *ngIf="filteredTransactions.length > 0; else noTransactions">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th class="text-right">Amount (₹)</th>
+              <th class="text-right">Balance After (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of filteredTransactions">
+              <td class="date-cell">
+                <span class="tx-date">{{ tx.date | date:'mediumDate' }}</span>
+                <span class="tx-time">{{ tx.date | date:'shortTime' }}</span>
+              </td>
+              <td>
+                <span class="account-pill">{{ tx.accountNumber }}</span>
+              </td>
+              <td>
+                <span class="tx-badge" [ngClass]="getBadgeClass(tx.type)">
+                  {{ tx.type }}
+                </span>
+              </td>
+              <td class="desc-cell">
+                <span class="tx-desc">{{ tx.description }}</span>
+                <span *ngIf="tx.relatedAccountNumber" class="tx-counterparty">
+                  Counterparty: {{ tx.relatedAccountNumber }}
+                </span>
+              </td>
+              <td class="text-right amount-cell" [ngClass]="isCredit(tx.type) ? 'amount-credit' : 'amount-debit'">
+                {{ isCredit(tx.type) ? '+' : '-' }}₹{{ tx.amount | number:'1.2-2' }}
+              </td>
+              <td class="text-right balance-after-cell">
+                ₹{{ tx.balanceAfter | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noTransactions>
+        <div class="empty-state">
+          <svg class="svg-icon svg-icon-xl empty-icon" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" x2="8" y1="13" y2="13"/>
+            <line x1="16" x2="8" y1="17" y2="17"/>
+          </svg>
+          <h4>No Transactions Found</h4>
+          <p>No ledger records match the active query.</p>
+        </div>
+      </ng-template>
+    </section>
+
+    <!-- Modal: Open Customer Account -->
+    <div *ngIf="showCreateModal" class="modal-backdrop" (click)="closeCreateModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3>Open Customer Account</h3>
+            <p class="modal-sub">Create a new customer account and initialize bank credentials</p>
+          </div>
+          <button (click)="closeCreateModal()" class="btn-close">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <form (ngSubmit)="onCreateCustomer()" #createForm="ngForm" class="modal-form" novalidate>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input
+              type="text"
+              name="newName"
+              [(ngModel)]="newCustomer.fullName"
+              required
+              minlength="2"
+              placeholder="e.g. Anjali Verma"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              name="newEmail"
+              [(ngModel)]="newCustomer.email"
+              #mgrEmail="ngModel"
+              required
+              placeholder="anjali@example.com"
+              class="form-control"
+              [class.is-invalid]="mgrEmail.invalid && (mgrEmail.dirty || mgrEmail.touched)"
+            />
+            <small class="field-error" *ngIf="mgrEmail.invalid && (mgrEmail.dirty || mgrEmail.touched)">
+              <span *ngIf="mgrEmail.errors?.['required']">Email address is required.</span>
+              <span *ngIf="!mgrEmail.errors?.['required']">Please enter a valid email address.</span>
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Temporary Password</label>
+            <input
+              type="password"
+              name="newPassword"
+              [(ngModel)]="newCustomer.password"
+              #mgrPass="ngModel"
+              required
+              minlength="6"
+              placeholder="At least 6 characters"
+              class="form-control"
+              [class.is-invalid]="mgrPass.invalid && (mgrPass.dirty || mgrPass.touched)"
+            />
+            <small class="field-error" *ngIf="mgrPass.invalid && (mgrPass.dirty || mgrPass.touched)">
+              <span *ngIf="mgrPass.errors?.['required']">Password is required.</span>
+              <span *ngIf="mgrPass.errors?.['minlength']">Password must be at least 6 characters long.</span>
+            </small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                name="newPhone"
+                [(ngModel)]="newCustomer.phoneNumber"
+                placeholder="+91 98765 43210"
+                class="form-control"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Opening Deposit (₹)</label>
+              <div class="input-rupee-wrapper">
+                <span class="rupee-prefix">₹</span>
+                <input
+                  type="number"
+                  name="newDeposit"
+                  [(ngModel)]="newCustomer.initialDeposit"
+                  min="0"
+                  step="any"
+                  placeholder="1000"
+                  class="form-control with-prefix"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" (click)="closeCreateModal()" class="btn-cancel">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="isSubmitting || !createForm.form.valid"
+              class="btn-submit"
+            >
+              <span *ngIf="!isSubmitting">Create Account &rarr;</span>
+              <span *ngIf="isSubmitting">Creating account...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

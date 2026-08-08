@@ -1,0 +1,24 @@
+# .NET build outputs
+**/bin/
+**/obj/
+*.user
+*.suo
+.vs/
+
+# Node & Angular
+**/node_modules/
+**/dist/
+**/.angular/
+Frontend/tmp/
+Frontend/out-tsc/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/

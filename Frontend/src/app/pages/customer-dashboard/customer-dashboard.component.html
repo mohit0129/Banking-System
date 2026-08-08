@@ -1,0 +1,563 @@
+<div class="dashboard-page">
+  <!-- Floating Toast Notification -->
+  <div class="toast-container" *ngIf="feedbackMessage">
+    <div class="toast-card" [ngClass]="isSuccess ? 'toast-success' : 'toast-error'">
+      <div class="toast-body">
+        <svg *ngIf="isSuccess" class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <svg *ngIf="!isSuccess" class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" x2="12" y1="8" y2="12"/>
+          <line x1="12" x2="12.01" y1="16" y2="16"/>
+        </svg>
+        <span>{{ feedbackMessage }}</span>
+      </div>
+      <button (click)="closeFeedback()" class="toast-close" title="Dismiss">
+        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+          <line x1="18" x2="6" y1="6" y2="18"/>
+          <line x1="6" x2="18" y1="6" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="dashboard-container">
+    <!-- Top Greeting Banner -->
+    <header class="welcome-banner">
+      <div class="welcome-info">
+        <div class="account-type-tag">
+          <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+            <path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/>
+          </svg>
+          <span>Savings Account • {{ branchName }}</span>
+        </div>
+        <h2>Welcome, {{ authService.currentUser()?.fullName }}</h2>
+        <p class="account-meta-line">
+          Account No: <strong>{{ account?.accountNumber }}</strong> • IFSC: <strong>{{ ifscCode }}</strong>
+        </p>
+      </div>
+
+      <div class="banner-actions">
+        <button (click)="refreshDashboard()" [disabled]="isRefreshing" class="btn-refresh-customer" title="Refresh records">
+          <svg class="svg-icon svg-icon-sm" [class.spin]="isRefreshing" viewBox="0 0 24 24">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+            <path d="M16 16h5v5"/>
+          </svg>
+          <span>{{ isRefreshing ? 'Refreshing...' : 'Refresh' }}</span>
+        </button>
+        <div class="account-status-badge" [ngClass]="account?.isActive ? 'status-active' : 'status-inactive'">
+          <span class="status-pulse-dot"></span>
+          <span>{{ account?.isActive ? 'Active' : 'Deactivated' }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Virtual RuPay Debit Card & Overview -->
+    <div class="hero-grid" *ngIf="account">
+      <!-- Virtual RuPay Debit Card -->
+      <div class="virtual-card">
+        <div class="card-glass-sheen"></div>
+        <div class="card-top">
+          <div class="card-brand">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/>
+            </svg>
+            <span class="bank-name">Money Bank</span>
+          </div>
+          <div class="network-badge">
+            <span class="rupay-text">RuPay</span>
+            <span class="platinum-pill">PLATINUM</span>
+          </div>
+        </div>
+
+        <div class="card-chip-row">
+          <div class="emv-chip">
+            <div class="chip-line horizontal"></div>
+            <div class="chip-line vertical"></div>
+          </div>
+          <svg class="svg-icon contactless-icon" viewBox="0 0 24 24">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <circle cx="12" cy="19.5" r="1" fill="currentColor"/>
+          </svg>
+        </div>
+
+        <div class="card-number" (click)="copyAccountNumber()" title="Click to copy account number">
+          {{ formattedCardNumber }}
+        </div>
+
+        <div class="card-bottom">
+          <div class="card-holder">
+            <span class="holder-label">CARD HOLDER</span>
+            <span class="holder-name">{{ authService.currentUser()?.fullName }}</span>
+          </div>
+          <div class="card-ifsc">
+            <span class="holder-label">IFSC CODE</span>
+            <span class="holder-val">{{ ifscCode }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Overview Cards -->
+      <div class="metrics-panel">
+        <div class="metric-card balance-card">
+          <div class="metric-header">
+            <div>
+              <span class="metric-tag">PRIMARY BALANCE</span>
+              <h3 class="balance-title">Available Balance</h3>
+            </div>
+            <div class="quick-details">
+              <button (click)="copyAccountNumber()" class="btn-copy-mini">
+                <svg *ngIf="!isAccCopied" class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+                <svg *ngIf="isAccCopied" class="svg-icon svg-icon-sm text-success" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span>{{ isAccCopied ? 'Copied!' : 'Copy A/C' }}</span>
+              </button>
+              <button (click)="copyIfsc()" class="btn-copy-mini">
+                <svg *ngIf="!isIfscCopied" class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+                <svg *ngIf="isIfscCopied" class="svg-icon svg-icon-sm text-success" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span>{{ isIfscCopied ? 'Copied!' : 'Copy IFSC' }}</span>
+              </button>
+            </div>
+          </div>
+          <div class="rupee-balance">
+            <span class="rupee-symbol">₹</span>
+            <span class="rupee-val">{{ account.balance | number:'1.2-2' }}</span>
+          </div>
+          <div class="balance-footer">
+            <span class="tier-pill">Tier: Everyday Prime Savings</span>
+            <span class="interest-hint">Instant 24x7 IMPS &amp; NEFT</span>
+          </div>
+        </div>
+
+        <div class="sub-metrics-row">
+          <div class="metric-card inflow-card">
+            <div class="sub-metric-header">
+              <span class="icon-circle icon-inflow">
+                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                  <line x1="17" x2="7" y1="7" y2="17"/>
+                  <polyline points="17 17 7 17 7 7"/>
+                </svg>
+              </span>
+              <span class="sub-metric-label">Money In</span>
+            </div>
+            <div class="metric-num text-success">+₹{{ totalInflow | number:'1.2-2' }}</div>
+            <span class="metric-hint">{{ inflowCount }} total incoming transfers</span>
+          </div>
+
+          <div class="metric-card outflow-card">
+            <div class="sub-metric-header">
+              <span class="icon-circle icon-outflow">
+                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                  <line x1="7" x2="17" y1="17" y2="7"/>
+                  <polyline points="7 7 17 7 17 17"/>
+                </svg>
+              </span>
+              <span class="sub-metric-label">Money Out</span>
+            </div>
+            <div class="metric-num text-danger">-₹{{ totalOutflow | number:'1.2-2' }}</div>
+            <span class="metric-hint">{{ outflowCount }} total withdrawals &amp; transfers</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banking Action Hub -->
+    <div class="action-hub-card">
+      <div class="action-hub-nav">
+        <button
+          type="button"
+          (click)="activeActionTab = 'deposit'"
+          [class.active-hub-tab]="activeActionTab === 'deposit'"
+          class="hub-nav-btn"
+        >
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <line x1="12" x2="12" y1="5" y2="19"/>
+            <polyline points="19 12 12 19 5 12"/>
+          </svg>
+          <span>Deposit Money</span>
+        </button>
+        <button
+          type="button"
+          (click)="activeActionTab = 'withdraw'"
+          [class.active-hub-tab]="activeActionTab === 'withdraw'"
+          class="hub-nav-btn"
+        >
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <line x1="12" x2="12" y1="19" y2="5"/>
+            <polyline points="5 12 12 5 19 12"/>
+          </svg>
+          <span>Withdraw Money</span>
+        </button>
+        <button
+          type="button"
+          (click)="activeActionTab = 'transfer'"
+          [class.active-hub-tab]="activeActionTab === 'transfer'"
+          class="hub-nav-btn"
+        >
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <line x1="22" x2="11" y1="2" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          <span>Send Money</span>
+        </button>
+      </div>
+
+      <div class="hub-content">
+        <!-- Inactive Account Notice Banner -->
+        <div *ngIf="account && !account.isActive" class="inactive-alert-banner">
+          <svg class="svg-icon inactive-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" x2="12" y1="8" y2="12"/>
+            <line x1="12" x2="12.01" y1="16" y2="16"/>
+          </svg>
+          <div class="inactive-text">
+            <strong>Account Inactive</strong>
+            <p>Your bank account is currently inactive. Financial transactions are paused. Please contact branch operations to reactivate your account.</p>
+          </div>
+        </div>
+
+        <!-- 1. DEPOSIT TAB -->
+        <div *ngIf="activeActionTab === 'deposit'" class="tab-pane">
+          <div class="pane-header">
+            <h4>Deposit Money</h4>
+            <p>Add funds directly into your Money Bank account.</p>
+          </div>
+
+          <div class="quick-chips">
+            <span class="chip-label">Presets:</span>
+            <button type="button" (click)="setDeposit(500)" class="chip">₹500</button>
+            <button type="button" (click)="setDeposit(1000)" class="chip">₹1,000</button>
+            <button type="button" (click)="setDeposit(5000)" class="chip">₹5,000</button>
+            <button type="button" (click)="setDeposit(10000)" class="chip">₹10,000</button>
+          </div>
+
+          <form (ngSubmit)="onDeposit()" #depositForm="ngForm" class="hub-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Amount (₹)</label>
+                <div class="input-rupee-wrapper">
+                  <span class="rupee-prefix">₹</span>
+                  <input
+                    type="number"
+                    name="depositAmount"
+                    [(ngModel)]="depositAmount"
+                    min="1"
+                    step="any"
+                    required
+                    placeholder="1000"
+                    class="form-control with-prefix"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Note (Optional)</label>
+                <input
+                  type="text"
+                  name="depositNote"
+                  [(ngModel)]="depositNote"
+                  placeholder="e.g. Salary, Savings"
+                  class="form-control"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="isProcessing || !account?.isActive || !depositAmount || depositAmount <= 0"
+              class="btn-hub-action btn-green"
+            >
+              <span *ngIf="!isProcessing">Deposit ₹{{ (depositAmount || 0) | number:'1.2-2' }}</span>
+              <span *ngIf="isProcessing">Processing deposit...</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. WITHDRAW TAB -->
+        <div *ngIf="activeActionTab === 'withdraw'" class="tab-pane">
+          <div class="pane-header">
+            <h4>Withdraw Money</h4>
+            <p>Withdraw cash directly from your available balance.</p>
+          </div>
+
+          <div class="quick-chips">
+            <span class="chip-label">Presets:</span>
+            <button type="button" (click)="setWithdraw(500)" class="chip">₹500</button>
+            <button type="button" (click)="setWithdraw(1000)" class="chip">₹1,000</button>
+            <button type="button" (click)="setWithdraw(2000)" class="chip">₹2,000</button>
+            <button type="button" (click)="setWithdraw(5000)" class="chip">₹5,000</button>
+          </div>
+
+          <form (ngSubmit)="onWithdraw()" #withdrawForm="ngForm" class="hub-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Amount (₹)</label>
+                <div class="input-rupee-wrapper">
+                  <span class="rupee-prefix">₹</span>
+                  <input
+                    type="number"
+                    name="withdrawAmount"
+                    [(ngModel)]="withdrawAmount"
+                    min="1"
+                    step="any"
+                    required
+                    placeholder="500"
+                    class="form-control with-prefix"
+                  />
+                </div>
+                <small *ngIf="withdrawAmount && withdrawAmount > currentBalance" class="text-danger">
+                  Amount is greater than available balance (₹{{ currentBalance | number:'1.2-2' }})
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label>Note (Optional)</label>
+                <input
+                  type="text"
+                  name="withdrawNote"
+                  [(ngModel)]="withdrawNote"
+                  placeholder="e.g. ATM, Shopping"
+                  class="form-control"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="isProcessing || !account?.isActive || !withdrawAmount || withdrawAmount <= 0 || withdrawAmount > currentBalance"
+              class="btn-hub-action btn-amber"
+            >
+              <span *ngIf="!isProcessing">Withdraw ₹{{ (withdrawAmount || 0) | number:'1.2-2' }}</span>
+              <span *ngIf="isProcessing">Processing withdrawal...</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- 3. SEND MONEY TAB -->
+        <div *ngIf="activeActionTab === 'transfer'" class="tab-pane">
+          <div class="pane-header">
+            <h4>Send Money</h4>
+            <p>Transfer funds securely to another Money Bank customer.</p>
+          </div>
+
+          <form (ngSubmit)="onTransfer()" #transferForm="ngForm" class="hub-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Recipient Account Number</label>
+                <input
+                  type="text"
+                  name="targetAccount"
+                  [(ngModel)]="targetAccountNumber"
+                  required
+                  placeholder="e.g. MB88220260"
+                  class="form-control"
+                  [class.is-invalid]="isSelfTransfer"
+                />
+                <small *ngIf="isSelfTransfer" class="text-danger">
+                  Cannot transfer funds to your own account.
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label>Amount (₹)</label>
+                <div class="input-rupee-wrapper">
+                  <span class="rupee-prefix">₹</span>
+                  <input
+                    type="number"
+                    name="transferAmount"
+                    [(ngModel)]="transferAmount"
+                    min="1"
+                    step="any"
+                    required
+                    placeholder="1000"
+                    class="form-control with-prefix"
+                  />
+                </div>
+                <small *ngIf="transferAmount && transferAmount > currentBalance" class="text-danger">
+                  Amount is greater than available balance (₹{{ currentBalance | number:'1.2-2' }})
+                </small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Note (Optional)</label>
+              <input
+                type="text"
+                name="transferNote"
+                [(ngModel)]="transferNote"
+                placeholder="e.g. Rent, Split bill"
+                class="form-control"
+              />
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="isProcessing || !account?.isActive || !targetAccountNumber || isSelfTransfer || !transferAmount || transferAmount <= 0 || transferAmount > currentBalance"
+              class="btn-hub-action btn-blue"
+            >
+              <span *ngIf="!isProcessing">Send ₹{{ (transferAmount || 0) | number:'1.2-2' }} &rarr;</span>
+              <span *ngIf="isProcessing">Processing transfer...</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction History Section -->
+    <section class="transactions-section">
+      <div class="section-toolbar">
+        <div>
+          <h3>Transaction History</h3>
+          <p class="section-sub">{{ filteredTransactions.length }} transactions • {{ inflowCount }} Inflow • {{ outflowCount }} Outflow</p>
+        </div>
+        <button
+          (click)="downloadStatement()"
+          [disabled]="transactions.length === 0"
+          class="btn-export"
+        >
+          <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" x2="12" y1="15" y2="3"/>
+          </svg>
+          <span>Download Statement (CSV)</span>
+        </button>
+      </div>
+
+      <!-- Filters & Search Bar -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <svg class="svg-icon search-icon" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Search by description or account number..."
+            class="search-input"
+          />
+          <button *ngIf="searchTerm" (click)="clearSearch()" class="btn-clear-search" title="Clear search">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="filter-pills">
+          <button
+            type="button"
+            (click)="selectedFilter = 'ALL'"
+            [class.active-pill]="selectedFilter === 'ALL'"
+            class="filter-pill"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            (click)="selectedFilter = 'Deposit'"
+            [class.active-pill]="selectedFilter === 'Deposit'"
+            class="filter-pill"
+          >
+            Deposits
+          </button>
+          <button
+            type="button"
+            (click)="selectedFilter = 'Withdrawal'"
+            [class.active-pill]="selectedFilter === 'Withdrawal'"
+            class="filter-pill"
+          >
+            Withdrawals
+          </button>
+          <button
+            type="button"
+            (click)="selectedFilter = 'Transfer In'"
+            [class.active-pill]="selectedFilter === 'Transfer In'"
+            class="filter-pill"
+          >
+            Money In
+          </button>
+          <button
+            type="button"
+            (click)="selectedFilter = 'Transfer Out'"
+            [class.active-pill]="selectedFilter === 'Transfer Out'"
+            class="filter-pill"
+          >
+            Money Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div class="table-container" *ngIf="filteredTransactions.length > 0; else noTxs">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th class="text-right">Amount (₹)</th>
+              <th class="text-right">Balance After (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of filteredTransactions">
+              <td class="date-cell">
+                <span class="tx-date">{{ tx.date | date:'mediumDate' }}</span>
+                <span class="tx-time">{{ tx.date | date:'shortTime' }}</span>
+              </td>
+              <td>
+                <span class="tx-badge" [ngClass]="getBadgeClass(tx.type)">
+                  {{ tx.type }}
+                </span>
+              </td>
+              <td class="desc-cell">
+                <span class="tx-desc">{{ tx.description }}</span>
+                <span *ngIf="tx.relatedAccountNumber" class="tx-counterparty">
+                  Account: {{ tx.relatedAccountNumber }}
+                </span>
+              </td>
+              <td class="text-right amount-cell" [ngClass]="isCredit(tx.type) ? 'amount-credit' : 'amount-debit'">
+                {{ isCredit(tx.type) ? '+' : '-' }}₹{{ tx.amount | number:'1.2-2' }}
+              </td>
+              <td class="text-right balance-after-cell">
+                ₹{{ tx.balanceAfter | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <ng-template #noTxs>
+        <div class="empty-state">
+          <svg class="svg-icon svg-icon-xl empty-icon" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" x2="8" y1="13" y2="13"/>
+            <line x1="16" x2="8" y1="17" y2="17"/>
+          </svg>
+          <h4 *ngIf="transactions.length > 0">No Matching Transactions</h4>
+          <p *ngIf="transactions.length > 0">Try clearing your search query or switching your category filter.</p>
+          <h4 *ngIf="transactions.length === 0">No Transactions Found</h4>
+          <p *ngIf="transactions.length === 0">Transactions will appear here when you deposit, withdraw, or transfer money.</p>
+        </div>
+      </ng-template>
+    </section>
+  </div>
+</div>
